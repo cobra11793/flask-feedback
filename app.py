@@ -11,6 +11,7 @@ load_dotenv()
 MY_PASSWORD = os.getenv("MY_PASSWORD")
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = "HELLO123"
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres:{MY_PASSWORD}@localhost/feedback'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True
@@ -26,7 +27,7 @@ db.create_all()
 def home():
     return redirect('/register')
 
-@app.route('/register' methods=["GET", "POST"])
+@app.route('/register', methods=["GET", "POST"])
 def register_user():
     form = AddUserForm()
     """Register user using WTF forms"""
@@ -37,13 +38,40 @@ def register_user():
         first_name = form.first_name.data
         last_name = form.last_name.data
 
-        user = User(username=username, 
-                    password=password, 
-                    email=email, 
-                    first_name=first_name, 
-                    last_name=last_name)
-        db.session.add(user)
-        db.session.commmit()
+        User.register(username, password, email, first_name, last_name)
+        db.session.commit()
         return redirect('/secret')
     else:
-        return render_template('users/register.html')
+        return render_template('users/register.html', form=form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login form for user"""
+
+    if "username" in session:
+        return redirect(f"/users/{session['username']}")
+
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+
+        user = User.authenticate(username, password)
+        if user:
+            session['username'] = user.username
+            return redirect("/secret")
+        else:
+            form.username.errors = ["Invalid username/password."]
+            return render_template("users/login.html", form=form)
+
+    return render_template("users/login.html", form=form)
+
+@app.route('/secret')
+def secret():
+    return render_template('users/secret.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('username')
+    return redirect('/')
