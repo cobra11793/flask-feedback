@@ -40,7 +40,7 @@ def register_user():
 
         User.register(username, password, email, first_name, last_name)
         db.session.commit()
-        return redirect('/secret')
+        return redirect(f"/users/{username}")
     else:
         return render_template('users/register.html', form=form)
 
@@ -60,16 +60,21 @@ def login():
         user = User.authenticate(username, password)
         if user:
             session['username'] = user.username
-            return redirect("/secret")
+            return redirect(f"/users/{user.username}")
         else:
             form.username.errors = ["Invalid username/password."]
             return render_template("users/login.html", form=form)
 
     return render_template("users/login.html", form=form)
 
-@app.route('/secret')
-def secret():
-    return render_template('users/secret.html')
+@app.route('/users/<username>')
+def display_user(username):
+    if "username" in session:
+        user = User.query.get_or_404(username)
+        return render_template('users/details.html', user=user)
+    else:
+        flash(f'Must be logged in as {username} to view!')
+        return redirect('/login')
 
 @app.route('/logout')
 def logout():
