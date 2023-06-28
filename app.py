@@ -69,12 +69,12 @@ def login():
 
 @app.route('/users/<username>')
 def display_user(username):
-    if "username" in session:
+    if "username" not in session or username != session['username']:
+        flash(f'Must be logged in as {username} to view!')
+        return redirect('/')
+    else:
         user = User.query.get_or_404(username)
         return render_template('users/details.html', user=user)
-    else:
-        flash(f'Must be logged in as {username} to view!')
-        return redirect('/login')
 
 @app.route('/logout')
 def logout():
