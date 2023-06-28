@@ -13,8 +13,13 @@
             {{f.label}}
             {{f}}
         </p>
-    {% endfor %}
+    
 
+        {% for e in f.errors %}
+        {{e}}
+        {% endfor %}
+        
+    {% endfor %}
     <button type="submit" id="submit">Submit</button>
 </form>
 
